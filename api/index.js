@@ -69,18 +69,23 @@ export default async (req, res) => {
 
   try {
     const showStats = parseArray(show);
+    // Handle include_all_commits: "both", "true", or "false"
+    const includeAllCommitsValue =
+      include_all_commits === "both"
+        ? "both"
+        : parseBoolean(include_all_commits);
     const stats = await microCache(
       `stats:${username}:${include_all_commits}:${exclude_repo}`,
       () =>
         fetchStats(
           username,
-          parseBoolean(include_all_commits),
+          includeAllCommitsValue,
           parseArray(exclude_repo),
           showStats.includes("prs_merged") ||
             showStats.includes("prs_merged_percentage"),
           showStats.includes("discussions_started"),
-          showStats.includes("discussions_answered")
-        )
+          showStats.includes("discussions_answered"),
+        ),
     );
 
     let cacheSeconds = clampValue(
@@ -97,64 +102,64 @@ export default async (req, res) => {
       `max-age=${cacheSeconds}, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
     );
 
-      // Normalize all visual params (Layer 4)
-  const normalizedParams = normalizeParams({
-    hide,
-    hide_title,
-    hide_border,
-    card_width,
-    hide_rank,
-    show_icons,
-    include_all_commits,
-    line_height,
-    title_color,
-    ring_color,
-    icon_color,
-    text_color,
-    text_bold,
-    bg_color,
-    theme,
-    custom_title,
-    locale,
-    disable_animations,
-    border_radius,
-    number_format,
-    border_color,
-    rank_icon,
-    show,
-  });
-
-  // Stable SVG cache key (Layer 3)
-  const svgKey = `stats-svg:${username}:${JSON.stringify(normalizedParams)}`;
-
-  const svg = await svgCacheGetOrSet(svgKey, () =>
-    renderStatsCard(stats, {
-      hide: parseArray(hide),
-      show_icons: parseBoolean(show_icons),
-      hide_title: parseBoolean(hide_title),
-      hide_border: parseBoolean(hide_border),
-      card_width: parseInt(card_width, 10),
-      hide_rank: parseBoolean(hide_rank),
-      include_all_commits: parseBoolean(include_all_commits),
+    // Normalize all visual params (Layer 4)
+    const normalizedParams = normalizeParams({
+      hide,
+      hide_title,
+      hide_border,
+      card_width,
+      hide_rank,
+      show_icons,
+      include_all_commits,
       line_height,
       title_color,
       ring_color,
       icon_color,
       text_color,
-      text_bold: parseBoolean(text_bold),
+      text_bold,
       bg_color,
       theme,
       custom_title,
+      locale,
+      disable_animations,
       border_radius,
-      border_color,
       number_format,
-      locale: locale ? locale.toLowerCase() : null,
-      disable_animations: parseBoolean(disable_animations),
+      border_color,
       rank_icon,
-      show: parseArray(show),
-    })
-  );
-  return res.send(svg);
+      show,
+    });
+
+    // Stable SVG cache key (Layer 3)
+    const svgKey = `stats-svg:${username}:${JSON.stringify(normalizedParams)}`;
+
+    const svg = await svgCacheGetOrSet(svgKey, () =>
+      renderStatsCard(stats, {
+        hide: parseArray(hide),
+        show_icons: parseBoolean(show_icons),
+        hide_title: parseBoolean(hide_title),
+        hide_border: parseBoolean(hide_border),
+        card_width: parseInt(card_width, 10),
+        hide_rank: parseBoolean(hide_rank),
+        include_all_commits: includeAllCommitsValue,
+        line_height,
+        title_color,
+        ring_color,
+        icon_color,
+        text_color,
+        text_bold: parseBoolean(text_bold),
+        bg_color,
+        theme,
+        custom_title,
+        border_radius,
+        border_color,
+        number_format,
+        locale: locale ? locale.toLowerCase() : null,
+        disable_animations: parseBoolean(disable_animations),
+        rank_icon,
+        show: parseArray(show),
+      }),
+    );
+    return res.send(svg);
   } catch (err) {
     res.setHeader(
       "Cache-Control",

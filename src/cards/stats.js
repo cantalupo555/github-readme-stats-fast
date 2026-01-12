@@ -204,6 +204,7 @@ const renderStatsCard = (stats, options = {}) => {
     name,
     totalStars,
     totalCommits,
+    totalCommitsYear,
     totalIssues,
     totalPRs,
     totalPRsMerged,
@@ -272,11 +273,23 @@ const renderStatsCard = (stats, options = {}) => {
   STATS.commits = {
     icon: icons.commits,
     label: `${i18n.t("statcard.commits")}${
-      include_all_commits ? "" : ` (${new Date().getFullYear()})`
+      include_all_commits === true || include_all_commits === "both"
+        ? ""
+        : ` (${new Date().getFullYear()})`
     }`,
     value: totalCommits,
     id: "commits",
   };
+
+  if (include_all_commits === "both") {
+    STATS.commits_year = {
+      icon: icons.commits,
+      label: `${i18n.t("statcard.commits")} (${new Date().getFullYear()})`,
+      value: totalCommitsYear,
+      id: "commits_year",
+    };
+  }
+
   STATS.prs = {
     icon: icons.prs,
     label: i18n.t("statcard.prs"),

@@ -212,7 +212,7 @@ const totalCommitsFetcher = async (username) => {
  * Fetch stats for a given username.
  *
  * @param {string} username GitHub username.
- * @param {boolean} include_all_commits Include all commits.
+ * @param {boolean|string} include_all_commits Include all commits. Can be true, false, or "both".
  * @param {string[]} exclude_repo Repositories to exclude.
  * @param {boolean} include_merged_pull_requests Include merged pull requests.
  * @param {boolean} include_discussions Include discussions.
@@ -238,6 +238,7 @@ const fetchStats = async (
     mergedPRsPercentage: 0,
     totalReviews: 0,
     totalCommits: 0,
+    totalCommitsYear: 0,
     totalIssues: 0,
     totalStars: 0,
     totalDiscussionsStarted: 0,
@@ -278,8 +279,12 @@ const fetchStats = async (
 
   stats.name = user.name || user.login;
 
-  // if include_all_commits, fetch all commits using the REST API.
-  if (include_all_commits) {
+  // Year commits always come from GraphQL
+  stats.totalCommitsYear =
+    user.contributionsCollection.totalCommitContributions;
+
+  // Handle include_all_commits: true, false, or "both"
+  if (include_all_commits === "both" || include_all_commits === true) {
     stats.totalCommits = await totalCommitsFetcher(username);
   } else {
     stats.totalCommits = user.contributionsCollection.totalCommitContributions;
