@@ -78,7 +78,7 @@ export default async (req, res) => {
 
     let cacheSeconds = clampValue(
       parseInt(cache_seconds || CONSTANTS.TOP_LANGS_CACHE_SECONDS, 10),
-      CONSTANTS.TWO_HOURS,
+      CONSTANTS.THIRTY_MINUTES,
       CONSTANTS.TEN_DAY,
     );
     cacheSeconds = process.env.CACHE_SECONDS
