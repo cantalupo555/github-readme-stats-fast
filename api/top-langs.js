@@ -66,19 +66,19 @@ export default async (req, res) => {
 
   try {
     const topLangs = await microCache(
-      `toplangs:${username}:${exclude_repo}`,
+      `toplangs:${username}:${exclude_repo}:${size_weight}:${count_weight}`,
       () =>
         fetchTopLanguages(
           username,
           parseArray(exclude_repo),
           size_weight,
-          count_weight
-        )
+          count_weight,
+        ),
     );
 
     let cacheSeconds = clampValue(
       parseInt(cache_seconds || CONSTANTS.TOP_LANGS_CACHE_SECONDS, 10),
-      CONSTANTS.TWO_DAY,
+      CONSTANTS.TWO_HOURS,
       CONSTANTS.TEN_DAY,
     );
     cacheSeconds = process.env.CACHE_SECONDS
@@ -87,7 +87,7 @@ export default async (req, res) => {
 
     res.setHeader(
       "Cache-Control",
-      `max-age=${cacheSeconds * 60}, s-maxage=${cacheSeconds * 60}`,
+      `max-age=${cacheSeconds}, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
     );
 
     // 🔒 Normalize visual params (prevents cache explosion)
@@ -102,6 +102,9 @@ export default async (req, res) => {
       theme,
       layout,
       langs_count,
+      exclude_repo,
+      size_weight,
+      count_weight,
       custom_title,
       locale,
       border_radius,
@@ -128,7 +131,7 @@ export default async (req, res) => {
         locale: locale ? locale.toLowerCase() : null,
         disable_animations: parseBoolean(disable_animations),
         hide_progress: parseBoolean(hide_progress),
-      })
+      }),
     );
 
     return res.send(svg);

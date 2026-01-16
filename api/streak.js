@@ -35,23 +35,22 @@ export default async (req, res) => {
     );
   }
 
-    let tokenIndex = 0;
+  let tokenIndex = 0;
 
-    function getNextToken() {
-      const tokens = Object.keys(process.env)
-        .filter((key) => key.startsWith("PAT_"))
-        .map((key) => process.env[key])
-        .filter(Boolean);
+  function getNextToken() {
+    const tokens = Object.keys(process.env)
+      .filter((key) => key.startsWith("PAT_"))
+      .map((key) => process.env[key])
+      .filter(Boolean);
 
-      if (tokens.length === 0) {
-        return process.env.GITHUB_TOKEN;
-      }
-
-      const token = tokens[tokenIndex % tokens.length];
-      tokenIndex++;
-      return token;
+    if (tokens.length === 0) {
+      return process.env.GITHUB_TOKEN;
     }
 
+    const token = tokens[tokenIndex % tokens.length];
+    tokenIndex++;
+    return token;
+  }
 
   try {
     const token = getNextToken();
@@ -67,9 +66,8 @@ export default async (req, res) => {
       );
     }
 
-    const streak = await microCache(
-      `streak:${username}`,
-      () => fetchStreak(username, token)
+    const streak = await microCache(`streak:${username}`, () =>
+      fetchStreak(username, token),
     );
 
     let cacheSeconds = clampValue(
@@ -83,7 +81,7 @@ export default async (req, res) => {
 
     res.setHeader(
       "Cache-Control",
-      `max-age=${3600}, s-maxage=${3600}`,
+      `max-age=${cacheSeconds}, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
     );
 
     const normalizedParams = normalizeParams({
@@ -103,7 +101,7 @@ export default async (req, res) => {
         text_color,
         bg_color,
         border_color,
-      })
+      }),
     );
     return res.send(svg);
   } catch (err) {
@@ -112,17 +110,13 @@ export default async (req, res) => {
       `max-age=${CONSTANTS.ERROR_CACHE_SECONDS / 2}, s-maxage=${CONSTANTS.ERROR_CACHE_SECONDS}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
     );
     return res.send(
-      renderError(
-        err.message || "Something went wrong",
-        err.secondaryMessage,
-        {
-          title_color,
-          text_color,
-          bg_color,
-          border_color,
-          theme,
-        },
-      ),
+      renderError(err.message || "Something went wrong", err.secondaryMessage, {
+        title_color,
+        text_color,
+        bg_color,
+        border_color,
+        theme,
+      }),
     );
   }
 };
